@@ -19,8 +19,8 @@ class MockSalesforceApiServer {
     static final String DEFAULT_ORG_ID = '00MOCK000000org'
     static final String DEFAULT_USER_ID = '00MOCK00000user'
     static final String DEFAULT_SESSION_ID = 'MOCKSESSIONID'
-    static final String METADATA_PATH_PREFIX = '/services/Soap/m/28.0/'
-    static final String PATH_PREFIX = '/services/Soap/u/28.0/'
+    static final String METADATA_PATH_PREFIX = '/services/Soap/m/'
+    static final String PATH_PREFIX = '/services/Soap/u/'
 
     private MockHttpsServer httpsServer
     private MockAsyncApi asyncApi
@@ -53,17 +53,20 @@ class MockSalesforceApiServer {
     }
 
     void loginDefaults() {
-        def xml = slurpAndEditXml('/template/login-response.xml') { root ->
-            root.Body.loginResponse.result.metadataServerUrl = "https://localhost:${httpsServer.port}${METADATA_PATH_PREFIX}${DEFAULT_ORG_ID}"
-            root.Body.loginResponse.result.serverUrl = "https://localhost:${httpsServer.port}${PATH_PREFIX}${DEFAULT_ORG_ID}"
-            root.Body.loginResponse.result.userId = DEFAULT_USER_ID
-            root.Body.loginResponse.result.userInfo.userId = DEFAULT_USER_ID
-            root.Body.loginResponse.result.userInfo.organizationId = DEFAULT_ORG_ID + 'MAC'
-            root.Body.loginResponse.result.sessionId = DEFAULT_SESSION_ID
-        }
-        httpsServer.respondTo(path('/services/Soap/u/28.0')
+        def loginPathPattern = '/services/Soap/u/(\\d+.\\d)'
+        httpsServer.respondTo(path(matchesPattern(loginPathPattern))
                 .and(header('Content-Type', startsWith('text/xml')))
-        ).withBody(xml)
+        ).withBody { request ->
+            def version = (request.path =~ loginPathPattern)[0][1]
+            slurpAndEditXml('/template/login-response.xml') { root ->
+                root.Body.loginResponse.result.metadataServerUrl = "https://localhost:${httpsServer.port}${METADATA_PATH_PREFIX}${version}/${DEFAULT_ORG_ID}"
+                root.Body.loginResponse.result.serverUrl = "https://localhost:${httpsServer.port}${PATH_PREFIX}${version}/${DEFAULT_ORG_ID}"
+                root.Body.loginResponse.result.userId = DEFAULT_USER_ID
+                root.Body.loginResponse.result.userInfo.userId = DEFAULT_USER_ID
+                root.Body.loginResponse.result.userInfo.organizationId = DEFAULT_ORG_ID + 'MAC'
+                root.Body.loginResponse.result.sessionId = DEFAULT_SESSION_ID
+            }
+        }
     }
     
     void oauthDefaults() {
