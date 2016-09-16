@@ -16,7 +16,7 @@ class MockQueryBuilder extends BaseBuilder {
 
     MockQueryResponse returnResults() {
         def response = new MockQueryResponse()
-        mockHttpsServer.respondTo(path(startsWith('/services/Soap/u/28.0'))
+        mockHttpsServer.respondTo(path(startsWith('/services/Soap/u/'))
                 .and(body(stringHasXPath('/Envelope/Body/query')))
         )
                 .withStatus(200)

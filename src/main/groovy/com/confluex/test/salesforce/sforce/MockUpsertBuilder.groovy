@@ -21,7 +21,7 @@ class MockUpsertBuilder extends BaseBuilder {
     }
 
     void matchUpsertRequests() {
-        mockHttpsServer.respondTo(path(startsWith('/services/Soap/u/28.0'))
+        mockHttpsServer.respondTo(path(startsWith('/services/Soap/u/'))
                 .and(body(stringHasXPath('/Envelope/Body/upsert')))
         )
                 .withStatus(200)
