@@ -1,4 +1,4 @@
-confluex-mock-salesforce-api
+sham-salesforce-api
 ============================
 
 To help you write isolated tests for your salesforce API client code
