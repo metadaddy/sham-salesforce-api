@@ -22,7 +22,7 @@ class MockGetUserInfoBuilder extends BaseBuilder {
 			root.Body.getUserInfoResponse.result.userEmail = 'trafacz@confluex.com'
 		}
 		log.debug("in MockGetUserInfoResponse.returnObject, after slurpAndEditXml, xml = $xml")
-        mockHttpsServer.respondTo(path(startsWith('/services/Soap/u/28.0'))
+        mockHttpsServer.respondTo(path(startsWith('/services/Soap/u/'))
                 .and(body(stringHasXPath('/Envelope/Body/getUserInfo')))
         )
             .withStatus(200)

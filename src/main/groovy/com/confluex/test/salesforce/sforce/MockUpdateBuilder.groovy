@@ -27,7 +27,7 @@ class MockUpdateBuilder extends BaseBuilder {
     MockUpdateResponse returnSuccess() {
         def response = new MockUpdateResponse()
 
-        mockHttpsServer.respondTo(path(startsWith('/services/Soap/u/28.0'))
+        mockHttpsServer.respondTo(path(startsWith('/services/Soap/u/'))
                 .and(body(stringHasXPath('/Envelope/Body/update')))
         )
                 .withStatus(200)

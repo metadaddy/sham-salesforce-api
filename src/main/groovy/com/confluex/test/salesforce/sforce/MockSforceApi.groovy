@@ -26,7 +26,7 @@ class MockSforceApi {
 
     List<SforceRequest> getRequests(String call) {
         mockHttpsServer.requests.findAll {
-            it.path =~ /\/services\/Soap\/u\/28.0/ && xpath("/Envelope/Body/$call", it.body)
+            it.path =~ /\/services\/Soap\/u\// && xpath("/Envelope/Body/$call", it.body)
         }.collect {
             switch(call) {
                 case 'update':

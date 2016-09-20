@@ -17,7 +17,7 @@ class MockRetrieveBuilder extends BaseBuilder {
 
     public MockRetrieveResponse returnObject() {
         def response = new MockRetrieveResponse()
-        mockHttpsServer.respondTo(path(startsWith('/services/Soap/u/28.0'))
+        mockHttpsServer.respondTo(path(startsWith('/services/Soap/u/'))
                 .and(body(stringHasXPath('/Envelope/Body/retrieve')))
         )
             .withStatus(200)
