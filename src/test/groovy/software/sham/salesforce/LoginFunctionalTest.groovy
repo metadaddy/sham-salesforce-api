@@ -1,9 +1,11 @@
 package software.sham.salesforce
 
-import com.sun.jersey.api.client.ClientResponse
 import groovy.xml.StreamingMarkupBuilder
 import org.junit.Test
 import org.springframework.core.io.ClassPathResource
+
+import javax.ws.rs.client.Entity
+import javax.ws.rs.core.Response
 
 class LoginFunctionalTest extends AbstractFunctionalTest {
 
@@ -14,11 +16,10 @@ class LoginFunctionalTest extends AbstractFunctionalTest {
         root.Body.login.password = 'yrartibraAPIKEY'
         String request = new StreamingMarkupBuilder().bind { mkp.yield root }
 
-        ClientResponse response = sslClient.resource('https://localhost:8081/services/Soap/u/28.0')
-            .entity(request, 'text/xml; charset=UTF-8')
-            .post(ClientResponse.class)
+        Response response = sslClient.target('https://localhost:8081/services/Soap/u/28.0').request()
+            .post(Entity.entity(request, 'text/xml; charset=UTF-8'))
 
-        def responseBody = response.getEntity(String)
+        def responseBody = response.readEntity(String)
 
         assert response.status == 200
         assert MockSalesforceApiServer.DEFAULT_USER_ID == evalXpath('/env:Envelope/env:Body/sf:loginResponse/sf:result/sf:userId', responseBody)

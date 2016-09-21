@@ -1,12 +1,13 @@
 package software.sham.salesforce
 
-import com.sun.jersey.api.client.ClientResponse
 import groovy.time.TimeCategory
 import groovy.util.logging.Slf4j
 import groovy.xml.MarkupBuilder
 import org.junit.Before
 import org.junit.Test
 
+import javax.ws.rs.client.Entity
+import javax.ws.rs.core.Response
 import javax.xml.parsers.DocumentBuilderFactory
 
 @Slf4j
@@ -34,11 +35,11 @@ class AsyncApiFunctionalTest extends AbstractFunctionalTest {
             externalIdFieldName('Unique_ID__c')
         }
 
-        ClientResponse response = sslClient.resource('https://localhost:8081/services/async/26.0/job/')
-                .entity(writer.toString(), 'text/xml; charset=UTF-8')
-                .post(ClientResponse.class)
+        Response response = sslClient.target('https://localhost:8081/services/async/26.0/job/')
+                .request()
+                .post(Entity.entity(writer.toString(), 'text/xml; charset=UTF-8'))
         assert 201 == response.status
-        String responseBody = response.getEntity(String)
+        String responseBody = response.readEntity(String)
         log.debug responseBody
 
         assert 'upsert' == evalXpath('/jobInfo/operation', responseBody)
@@ -60,11 +61,11 @@ class AsyncApiFunctionalTest extends AbstractFunctionalTest {
         def builder = new MarkupBuilder(writer)
         builder.sObjects(xmlns: 'http://www.force.com/2009/06/asyncapi/dataload')
 
-        ClientResponse response = sslClient.resource('https://localhost:8081/services/async/26.0/job/JOB001/batch')
-                .entity(writer.toString(), 'text/xml; charset=UTF-8')
-                .post(ClientResponse.class)
+        Response response = sslClient.target('https://localhost:8081/services/async/26.0/job/JOB001/batch')
+                .request()
+                .post(Entity.entity(writer.toString(), 'text/xml; charset=UTF-8'))
         assert 201 == response.status
-        String responseBody = response.getEntity(String)
+        String responseBody = response.readEntity(String)
         log.debug responseBody
 
         assert evalXpath('/batchInfo/id', responseBody).length() > 0
@@ -76,9 +77,11 @@ class AsyncApiFunctionalTest extends AbstractFunctionalTest {
 
     @Test
     public void checkBatchStatusShouldReplySuccessByDefault() {
-        ClientResponse response = sslClient.resource('https://localhost:8081/services/async/26.0/job/JOB001/batch/ARBITRARYBATCH/result').get(ClientResponse.class)
+        Response response = sslClient.target('https://localhost:8081/services/async/26.0/job/JOB001/batch/ARBITRARYBATCH/result')
+                .request()
+                .get()
 
-        String responseBody = response.getEntity(String)
+        String responseBody = response.readEntity(String)
         log.debug responseBody
 
         assert 200 == response.status
@@ -89,9 +92,11 @@ class AsyncApiFunctionalTest extends AbstractFunctionalTest {
     @Test
     public void checkBatchStatusShouldReplyInvalidBatchAfterConfiguredAsSuch() {
         server.asyncApi().batchResult().forId("IMAGINARYBATCH").respondInvalid();
-        ClientResponse response = sslClient.resource('https://localhost:8081/services/async/26.0/job/JOB001/batch/IMAGINARYBATCH/result').get(ClientResponse.class)
+        Response response = sslClient.target('https://localhost:8081/services/async/26.0/job/JOB001/batch/IMAGINARYBATCH/result')
+                .request()
+                .get()
 
-        String responseBody = response.getEntity(String)
+        String responseBody = response.readEntity(String)
         log.debug responseBody
 
         assert 400 == response.status
@@ -103,9 +108,11 @@ class AsyncApiFunctionalTest extends AbstractFunctionalTest {
     public void checkBatchStatusShouldReplyBatchNotCompletedAfterConfiguredAsSuch() {
         server.asyncApi().batchResult().forId("INCOMPLETEBATCH").respondIncomplete();
 
-        ClientResponse response = sslClient.resource('https://localhost:8081/services/async/26.0/job/JOB001/batch/INCOMPLETEBATCH/result').get(ClientResponse.class)
+        Response response = sslClient.target('https://localhost:8081/services/async/26.0/job/JOB001/batch/INCOMPLETEBATCH/result')
+            .request()
+            .get()
 
-        String responseBody = response.getEntity(String)
+        String responseBody = response.readEntity(String)
         log.debug responseBody
 
         assert 400 == response.status
@@ -115,9 +122,9 @@ class AsyncApiFunctionalTest extends AbstractFunctionalTest {
 
     @Test
     public void checkBatchStatusHonorsIdMatch() {
-        def batchResource = sslClient.resource('https://localhost:8081/services/async/26.0/job/JOB001/batch')
+        def batchResource = sslClient.target('https://localhost:8081/services/async/26.0/job/JOB001/batch')
         server.asyncApi().batchResult().forId("INCOMPLETEBATCH").respondIncomplete();
-        assert 400 == batchResource.path('INCOMPLETEBATCH/result').get(ClientResponse.class).status
-        assert 200 == batchResource.path('SOMEOTHERBATCH/result').get(ClientResponse.class).status
+        assert 400 == batchResource.path('INCOMPLETEBATCH/result').request().get().status
+        assert 200 == batchResource.path('SOMEOTHERBATCH/result').request().get().status
     }
 }

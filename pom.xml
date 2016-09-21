@@ -3,7 +3,7 @@
 
     <groupId>software.sham</groupId>
     <artifactId>sham-salesforce-api</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Mock Salesforce.com Testing API</name>
     <url>http://sham.software/salesforce-api</url>
@@ -44,14 +44,14 @@
         <sonar.sources>src/main/groovy</sonar.sources>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <jdk.version>1.6</jdk.version>
+        <jdk.version>1.7</jdk.version>
         <gmaven.version>1.3</gmaven.version>
-        <groovy.version>1.8.6</groovy.version>
-        <spring.version>3.2.1.RELEASE</spring.version>
-        <jersey.version>1.6</jersey.version>
-        <log4j.version>1.2.16</log4j.version>
-        <sl4fj.version>1.6.1</sl4fj.version>
-        <jetty.version>6.1.26</jetty.version>
+        <groovy.version>2.3.7</groovy.version>
+        <spring.version>3.2.10.RELEASE</spring.version>
+        <jersey.version>2.11</jersey.version>
+        <log4j.version>2.1</log4j.version>
+        <sl4fj.version>1.7.7</sl4fj.version>
+        <jetty.version>9.2.18.v20160721</jetty.version>
     </properties>
     <build>
         <plugins>
@@ -146,8 +146,20 @@
 
             <!-- Logging -->
             <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>${log4j.version}</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>${log4j.version}</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-slf4j-impl</artifactId>
                 <version>${log4j.version}</version>
                 <optional>true</optional>
             </dependency>
@@ -162,17 +174,10 @@
                 <artifactId>slf4j-api</artifactId>
                 <version>${sl4fj.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-log4j12</artifactId>
-                <version>${sl4fj.version}</version>
-                <optional>true</optional>
-            </dependency>
-
             <!-- HTTP -->
             <dependency>
-                <groupId>org.mortbay.jetty</groupId>
-                <artifactId>jetty</artifactId>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-server</artifactId>
                 <version>${jetty.version}</version>
             </dependency>
             <dependency>
@@ -208,7 +213,7 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>com.sun.jersey</groupId>
+                <groupId>org.glassfish.jersey.core</groupId>
                 <artifactId>jersey-client</artifactId>
                 <version>${jersey.version}</version>
                 <scope>test</scope>
@@ -216,7 +221,7 @@
             <dependency>
                 <groupId>org.cometd.java</groupId>
                 <artifactId>cometd-java-client</artifactId>
-                <version>2.6.0</version>
+                <version>3.0.10</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>
@@ -230,8 +235,16 @@
 
         <!-- Logging -->
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -242,8 +255,10 @@
             <artifactId>slf4j-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
+            <groupId>com.lmax</groupId>
+            <artifactId>disruptor</artifactId>
+            <version>3.3.2</version>
+            <optional>true</optional>
         </dependency>
 
         <!-- HTTP -->
@@ -270,13 +285,18 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
         </dependency>
+
         <dependency>
-            <groupId>com.sun.jersey</groupId>
+            <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-client</artifactId>
         </dependency>
         <dependency>
             <groupId>org.cometd.java</groupId>
             <artifactId>cometd-java-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
         </dependency>
     </dependencies>
     <profiles>

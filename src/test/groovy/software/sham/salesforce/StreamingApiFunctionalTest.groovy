@@ -1,5 +1,6 @@
 package software.sham.salesforce
 
+import groovy.util.logging.Slf4j
 import software.sham.http.MockHttpsServer
 import org.junit.After
 import org.junit.Before
@@ -8,6 +9,7 @@ import software.sham.salesforce.util.SfdcStreamingClient
 
 import javax.net.ssl.HttpsURLConnection
 
+@Slf4j
 class StreamingApiFunctionalTest extends AbstractFunctionalTest {
     SfdcStreamingClient client
 
@@ -33,17 +35,21 @@ class StreamingApiFunctionalTest extends AbstractFunctionalTest {
     void shouldPublishEventsToTopics() {
         def received = null
 
+        log.debug("Subscribing to SampleTopic")
         client.subscribeTopic('SampleTopic') { message ->
+            log.debug("Received message on SampleTopic")
             received = message
         }
 
         assert null == received
         Thread.sleep 500
 
+        log.debug("Publishing message to SomeOtherTopic")
         server.streamingApi().publish('SomeOtherTopic', [id: '00321'])
         assert null == received
 
         Thread.sleep 500
+        log.debug("Publishing message to SampleTopic")
         server.streamingApi().publish('SampleTopic', [id: '00123'])
         Thread.sleep 500
         assert null != received

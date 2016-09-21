@@ -1,20 +1,27 @@
 package software.sham.salesforce.util
 
-import com.sun.jersey.api.client.Client
-import com.sun.jersey.api.client.ClientResponse
-import groovy.util.logging.Slf4j
-import groovy.xml.StreamingMarkupBuilder
 import org.cometd.bayeux.Message
 import org.cometd.bayeux.client.ClientSessionChannel
 import org.cometd.client.BayeuxClient
 import org.cometd.client.transport.LongPollingTransport
-import org.eclipse.jetty.client.ContentExchange
 import org.eclipse.jetty.client.HttpClient
+import org.eclipse.jetty.client.api.Request
+import org.eclipse.jetty.util.ssl.SslContextFactory
+import software.sham.http.MockHttpsServer
+
+import javax.ws.rs.client.Client
+import javax.ws.rs.client.ClientBuilder
+import javax.ws.rs.client.Entity
+import javax.ws.rs.core.Response
+import groovy.util.logging.Slf4j
+import groovy.xml.StreamingMarkupBuilder
+
 import org.springframework.core.io.ClassPathResource
 
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.xpath.XPathConstants
 import javax.xml.xpath.XPathFactory
+
 
 @Slf4j
 class SfdcStreamingClient {
@@ -25,6 +32,7 @@ class SfdcStreamingClient {
     String streamingUrl
     String sessionId
     BayeuxClient bayeuxClient
+
 
     public SfdcStreamingClient(String username, String password, String securityToken, String url) {
         this.username = username
@@ -59,12 +67,13 @@ class SfdcStreamingClient {
         root.Body.login.password = password + securityToken
         String request = new StreamingMarkupBuilder().bind { mkp.yield root }
 
-        ClientResponse response = Client.create().resource(url)
-                .entity(request, 'text/xml; charset=UTF-8')
+        Client sslClient = ClientBuilder.newBuilder().sslContext(MockHttpsServer.clientSslContext).build()
+        Response response = sslClient.target(url)
+                .request()
                 .header('SOAPAction', '""')
-                .post(ClientResponse.class)
+                .post(Entity.entity(request, 'text/xml; charset=UTF-8'))
 
-        def responseBody = response.getEntity(String)
+        def responseBody = response.readEntity(String)
         log.debug "Login response: $responseBody"
         assert response.status == 200
         sessionId = evalXpath('/Envelope/Body/loginResponse/result/sessionId', responseBody)
@@ -79,15 +88,16 @@ class SfdcStreamingClient {
 
     private LongPollingTransport initTransport() {
         final def timeout = 110 * 1000
-        def httpClient = new HttpClient(connectTimeout: timeout, timeout: timeout)
+        def httpClient = new HttpClient(new SslContextFactory(true))
+        httpClient.connectTimeout = timeout
         httpClient.start()
         new LongPollingTransport(
                 [timeout: timeout],
                 httpClient) {
             @Override
-            protected void customize(ContentExchange exchange) {
-                super.customize(exchange)
-                exchange.addRequestHeader("Authorization", "OAuth $sessionId")
+            protected void customize(Request request) {
+                super.customize(request)
+                request.headers.add("Authorization", "OAuth $sessionId")
             }
         }
     }

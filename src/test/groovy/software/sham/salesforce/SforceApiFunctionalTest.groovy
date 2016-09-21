@@ -1,12 +1,13 @@
 package software.sham.salesforce
 
-import com.sun.jersey.api.client.ClientResponse
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 import groovy.xml.StreamingMarkupBuilder
 import org.junit.Test
 import org.springframework.core.io.ClassPathResource
 
+import javax.ws.rs.client.Entity
+import javax.ws.rs.core.Response
 import javax.xml.xpath.XPathConstants
 
 @Slf4j
@@ -21,11 +22,11 @@ class SforceApiFunctionalTest extends AbstractFunctionalTest {
         root.Body.retrieve.ids = '000000000000001,000000000000002'
         String request = new StreamingMarkupBuilder().bind { mkp.yield root }
 
-        ClientResponse response = postSforce(request, ClientResponse)
+        Response response = postSforce(request, Response)
 
         assert response.status == 200
 
-        def responseBody = response.getEntity(String)
+        def responseBody = response.readEntity(String)
         log.debug("retrieve response: $responseBody")
         assert 2 == evalXpath('/env:Envelope/env:Body/sf:retrieveResponse/sf:result', responseBody, XPathConstants.NODESET).length
         assert '000000000000001' == evalXpath('/env:Envelope/env:Body/sf:retrieveResponse/sf:result[1]/so:Id', responseBody)
@@ -49,9 +50,9 @@ class SforceApiFunctionalTest extends AbstractFunctionalTest {
         root.Body.retrieve.ids = '000000000000001'
         String request = new StreamingMarkupBuilder().bind { mkp.yield root }
 
-        String response = sslClient.resource('https://localhost:8081/services/Soap/u/28.0/00MOCK000000org')
-                .entity(request, 'text/xml; charset=UTF-8')
-                .post(String)
+        String response = sslClient.target('https://localhost:8081/services/Soap/u/28.0/00MOCK000000org')
+              .request()
+              .post(Entity.entity(request, 'text/xml; charset=UTF-8')).readEntity(String)
         assert 'steve@woz.org' == evalXpath('/env:Envelope/env:Body/sf:retrieveResponse/sf:result[1]/so:Email', response)
     }
 
@@ -66,19 +67,19 @@ class SforceApiFunctionalTest extends AbstractFunctionalTest {
         root.Body.retrieve.ids = '000000000000001'
         String request = new StreamingMarkupBuilder().bind { mkp.yield root }
 
-        String response = sslClient.resource('https://localhost:8081/services/Soap/u/28.0/00MOCK000000org')
-                .entity(request, 'text/xml; charset=UTF-8')
-                .post(String)
+        String response = sslClient.target('https://localhost:8081/services/Soap/u/28.0/00MOCK000000org')
+                .request()
+                .post(Entity.entity(request, 'text/xml; charset=UTF-8')).readEntity(String)
         assert 'SuperHero' == evalXpath('/env:Envelope/env:Body/sf:retrieveResponse/sf:result[1]/so:RecordType/so:DeveloperName', response)
     }
 
     @Test
     void updateShouldRespondSuccessWithIdByDefault() {
-        ClientResponse httpResponse = postSforce(updateRequest([type: 'Contact', Id: '001234', FirstName: 'NewName']), ClientResponse)
+        Response httpResponse = postSforce(updateRequest([type: 'Contact', Id: '001234', FirstName: 'NewName']), Response)
 
         assert 200 == httpResponse.status
 
-        def response = httpResponse.getEntity(String)
+        def response = httpResponse.readEntity(String)
         assert 'true' == evalXpath('/env:Envelope/env:Body/sf:updateResponse/sf:result[1]/sf:success', response)
         assert '001234' == evalXpath('/env:Envelope/env:Body/sf:updateResponse/sf:result[1]/sf:id', response)
     }
@@ -96,10 +97,10 @@ class SforceApiFunctionalTest extends AbstractFunctionalTest {
 
     @Test
     void selectQueryShouldReturnEmptyResults() {
-        ClientResponse httpResponse = postSforce(queryRequest("SELECT FirstName, LastName, Account.Description FROM Contact WHERE Id = '1'"), ClientResponse)
+        Response httpResponse = postSforce(queryRequest("SELECT FirstName, LastName, Account.Description FROM Contact WHERE Id = '1'"), Response)
 
         assert 200 == httpResponse.status
-        def response = httpResponse.getEntity(String)
+        def response = httpResponse.readEntity(String)
         assert 'true' == evalXpath('/env:Envelope/env:Body/sf:queryResponse/sf:result[1]/sf:done', response)
         assert 'true' == evalXpath('/env:Envelope/env:Body/sf:queryResponse/sf:result[1]/sf:queryLocator/@xsi:nil', response)
         assert '0' == evalXpath('/env:Envelope/env:Body/sf:queryResponse/sf:result[1]/sf:size', response)
@@ -130,11 +131,11 @@ class SforceApiFunctionalTest extends AbstractFunctionalTest {
 
     @Test
     void upsertShouldRespondSuccessWithIdByDefault() {
-        ClientResponse httpResponse = postSforce(upsertRequest([type: 'Contact', Id: '001234', FirstName: 'NewName']), ClientResponse)
+        Response httpResponse = postSforce(upsertRequest([type: 'Contact', Id: '001234', FirstName: 'NewName']), Response)
 
         assert 200 == httpResponse.status
 
-        def response = httpResponse.getEntity(String)
+        def response = httpResponse.readEntity(String)
         assert 'true' == evalXpath('/env:Envelope/env:Body/sf:upsertResponse/sf:result[1]/sf:success', response)
         assert '001234' == evalXpath('/env:Envelope/env:Body/sf:upsertResponse/sf:result[1]/sf:id', response)
     }
@@ -236,9 +237,9 @@ class SforceApiFunctionalTest extends AbstractFunctionalTest {
 
 	@Test
 	void getUserInfoShouldRespondSuccess() {
-		ClientResponse httpResponse = postSforce(getUserInfoRequest(), ClientResponse)
+		Response httpResponse = postSforce(getUserInfoRequest(), Response)
 		
-		def response = httpResponse.getEntity(String)
+		def response = httpResponse.readEntity(String)
 		log.debug("in getUserInfoShouldRespondSuccess, httpResponse = $response")
 		
 		assert 200 == httpResponse.status
@@ -248,9 +249,9 @@ class SforceApiFunctionalTest extends AbstractFunctionalTest {
 	
 	@Test
 	void authorizeShouldRespondSuccess() {
-		ClientResponse httpResponse = authorizeSforce(ClientResponse)
+		Response httpResponse = authorizeSforce(Response)
 		
-		def response = httpResponse.getEntity(String)
+		def response = httpResponse.readEntity(String)
 		log.debug("in authorizeShouldRespondSuccess, httpResponse = $response")
 		
 		assert 200 == httpResponse.status
@@ -267,15 +268,16 @@ class SforceApiFunctionalTest extends AbstractFunctionalTest {
     }
 
     private <T> T postSforce(String request, Class<T> typeToReturn) {
-        sslClient.resource('https://localhost:8081/services/Soap/u/28.0/00MOCK000000org')
-                .entity(request, 'text/xml; charset=UTF-8')
-                .post(typeToReturn)
+        def response = sslClient.target('https://localhost:8081/services/Soap/u/28.0/00MOCK000000org').request()
+                .post(Entity.entity(request, 'text/xml; charset=UTF-8'))
+        if (typeToReturn.isAssignableFrom(Response)) return response
+        return response.readEntity(typeToReturn)
     }
 	
 	private <T> T authorizeSforce(Class<T> typeToReturn) {
 		// sslClient.resource().getUriBuilder().queryParam(request, null)
-		sslClient.resource('https://localhost:8081/services/oauth2/authorize?response_type=code&client_id=3MVG9A2kN3Bn17huRvrgRwErKxdF5TY.t6TrcT_eqTBo3LXr5cpdpOGg6CxBEQVDVzJf0sWgm1srocDaHMH8W&immediate=false&state=%3C%3CMULE_EVENT_ID%3D0-ed84f231-e81f-11e3-bf8b-d4bed9318703%3E%3E&display=page&redirect_uri=http%3A%2F%2Flocalhost%3A8081%2Foauthcallback')
-                .get(typeToReturn)
+		sslClient.target('https://localhost:8081/services/oauth2/authorize?response_type=code&client_id=3MVG9A2kN3Bn17huRvrgRwErKxdF5TY.t6TrcT_eqTBo3LXr5cpdpOGg6CxBEQVDVzJf0sWgm1srocDaHMH8W&immediate=false&state=%3C%3CMULE_EVENT_ID%3D0-ed84f231-e81f-11e3-bf8b-d4bed9318703%3E%3E&display=page&redirect_uri=http%3A%2F%2Flocalhost%3A8081%2Foauthcallback')
+                .request().get(typeToReturn)
 	}
 	
 

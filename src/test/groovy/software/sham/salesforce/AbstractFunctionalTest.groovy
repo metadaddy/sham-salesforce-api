@@ -1,13 +1,11 @@
 package software.sham.salesforce
 
 import software.sham.http.MockHttpsServer
-import com.sun.jersey.api.client.Client
-import com.sun.jersey.api.client.config.ClientConfig
-import com.sun.jersey.api.client.config.DefaultClientConfig
-import com.sun.jersey.client.urlconnection.HTTPSProperties
 import org.junit.After
 import org.junit.Before
 
+import javax.ws.rs.client.Client
+import javax.ws.rs.client.ClientBuilder
 import javax.xml.namespace.NamespaceContext
 import javax.xml.namespace.QName
 import javax.xml.parsers.DocumentBuilder
@@ -34,9 +32,9 @@ class AbstractFunctionalTest {
 
     @Before
     void initClient() {
-        ClientConfig config = new DefaultClientConfig()
-        config.properties.put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(null, MockHttpsServer.clientSslContext))
-        sslClient = Client.create(config)
+        sslClient = ClientBuilder.newBuilder()
+                .sslContext(MockHttpsServer.clientSslContext)
+                .build()
     }
 
     @Before
